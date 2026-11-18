@@ -1,0 +1,35 @@
+workflows:
+  android-apk:
+    name: Dhikr APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: 1 create
+        script: |
+          flutter create . --org com.swalaf --project-name dhikr --platforms android,ios
+          rm -f test/widget_test.dart
+      - name: 2 assets
+        script: |
+          python3 tool/make_assets.py
+          mkdir -p assets/fonts
+          F=https://raw.githubusercontent.com/google/fonts/main/ofl
+          curl -fsSL $F/amiri/Amiri-Regular.ttf -o assets/fonts/Amiri-Regular.ttf
+          curl -fsSL $F/amiri/Amiri-Bold.ttf -o assets/fonts/Amiri-Bold.ttf
+          for w in Regular Medium Bold ExtraBold; do
+            curl -fsSL $F/tajawal/Tajawal-$w.ttf -o assets/fonts/Tajawal-$w.ttf
+          done
+          ls -R assets
+      - name: 3 pub get
+        script: flutter pub get
+      - name: 4 setup
+        script: dart run tool/setup.dart
+      - name: 5 icons
+        script: dart run flutter_launcher_icons
+      - name: 6 splash
+        script: dart run flutter_native_splash:create
+      - name: 7 build apk
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
